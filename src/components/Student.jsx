@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-
+import { useQuery } from "@tanstack/react-query";
 function Student() {
   const [_id, setId] = useState("");
   const [name, setName] = useState("");
@@ -8,15 +8,27 @@ function Student() {
   const [phone, setMobile] = useState("");
   const [employees, setUsers] = useState([]);
 
-  useEffect(() => {
-    (async () => await Load())();
-  }, []);
+  // useEffect(() => {
+  //   (async () => await Load())();
+  // }, []);
 
   async function Load() {
-    const result = await axios.get("http://localhost:5000/students");
-    setUsers(result.data.data);
-    console.log(result.data);
+    const result = await axios
+      .get("http://localhost:5000/students")
+      .then((res) => {
+        let employee = JSON.stringify(res.data);
+        setUsers(employee);
+        console.log(result.data);
+      });
   }
+
+  const { data } = useQuery({
+    queryKey: ["employee"],
+    queryFn: () =>
+      fetch("http://localhost:5000/students").then((res) => res.json()),
+    onSuccess: (data) => console.log(data),
+    onError: (error) => console.error(error),
+  });
 
   async function save(event) {
     event.preventDefault();
@@ -45,7 +57,7 @@ function Student() {
   }
 
   async function DeleteEmployee(_id) {
-    await axios.delete("http://localhost:8000/user/delete/" + _id);
+    await axios.delete("http://localhost:5000/students/" + _id);
     alert("Employee deleted Successfully");
     Load();
   }
@@ -54,7 +66,7 @@ function Student() {
     event.preventDefault();
     try {
       await axios.patch(
-        "http://localhost:8000/user/update/" +
+        "http://localhost:5000/students/" +
           employees.find((u) => u._id === _id)._id || _id,
         {
           _id: _id,
@@ -149,34 +161,32 @@ function Student() {
             <th scope="col">Option</th>
           </tr>
         </thead>
-        {employees.map(function fn(employee) {
-          return (
-            <tbody>
-              <tr>
-                <th scope="row">{employee._id} </th>
-                <td>{employee.name}</td>
-                <td>{employee.address}</td>
-                <td>{employee.phone}</td>
-                <td>
-                  <button
-                    type="button"
-                    class="btn btn-warning"
-                    onClick={() => editEmployee(employee)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-danger"
-                    onClick={() => DeleteEmployee(employee._id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          );
-        })}
+        {data?.map((employee) => (
+          <tbody>
+            <tr>
+              <th scope="row">{employee._id} </th>
+              <td>{employee.name}</td>
+              <td>{employee.address}</td>
+              <td>{employee.phone}</td>
+              <td>
+                <button
+                  type="button"
+                  className="btn btn-warning"
+                  onClick={() => editEmployee(employee)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => DeleteEmployee(employee._id)}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        ))}
       </table>
     </div>
   );
